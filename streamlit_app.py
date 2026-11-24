@@ -9,7 +9,7 @@ are embedded below as compressed text and registered as normal Python modules at
 uploading. Each module loads on its own, so a problem in one can never take down the rest of the app.
 
 Keys can live in Streamlit Secrets / environment variables (LI_API_KEY, RISKDATA_API_KEY, GROUPING_API_KEY,
-INFORCE_ANALYSIS_ID, RMS_HOST). The quote library is stored in STORE_DIR (default: a folder in the home directory); every account run is also saved to a
+INFORCE_ANALYSIS_ID, RMS_HOST). Every save is verified and copied to the shared folder, and the library is rebuilt from it automatically. Marginal Impact compares against the in-force portfolio picked in the sidebar. The quote library is stored in STORE_DIR (default: a folder in the home directory); every account run is also saved to a
 timestamped folder under /mnt/from-posit/content/anv-eq-rms-modeller/ (local fallback if that mount is unavailable).
 """
 import base64
@@ -34,7 +34,7 @@ import traceback as _tb
 import types as _types
 import zlib as _zlib
 
-BUILD_ID = "v13-quote-desk"
+BUILD_ID = "v15-quote-desk"
 
 _BUNDLED_MODULES = [
     ("rms_preflight", """
@@ -523,60 +523,118 @@ PnObOpH7lpEGfCJoXnlPLNaTKGk7Cbhfjkx6HMpR9a53fqLyVdqOQQR+39YQPG46D0Iea52zej0DrsbG
 H02qsMY=
 """),
     ("anv_store", """
-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
+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
 """),
     ("rms_results_ui", """
 eNrdfdt227iy4Lu/Aoe9ckwmtCL5FkdpZcZJnHRWO3G27XTv3j5eXBQJSWxTJENSvrTH53E+YH5mv+9PmS+ZqgJAAiQlO9nJy2R1WxIIFAqFQlWhUAValr
@@ -1133,6 +1191,8 @@ CONFIRMED_DEFAULTS = {
 # The in-force portfolio analysis Marginal Impact compares against (Controls!A2). Changes about once a month -
 # overwrite it in the sidebar box (or save INFORCE_ANALYSIS_ID in Secrets).
 DEFAULT_INFORCE_ANALYSIS_ID = "65418"
+DEFAULT_INFORCE_LONG_ID = "2667825"          # the long analysisId behind app ID 65418
+DEFAULT_INFORCE_NAME = "EQShake_SL_AmTrustDIC"
 
 
 class RmsAnalysisApi:
@@ -2181,9 +2241,10 @@ except Exception as _exc:                 # noqa: BLE001  (results must never ta
                     or f"{type(_exc).__name__}: {_exc}\n\n" + "".join(_tb.format_exc().splitlines(True)[-6:]))
 try:
     from rms_results import (Creds as _Creds, Http as _Http, test_connections as _test_connections,
-                             resolve_exposure_id as _resolve_exposure_id, account_from_edm as _account_from_edm)
+                             resolve_exposure_id as _resolve_exposure_id, account_from_edm as _account_from_edm,
+                             resolve_inforce_analysis as _resolve_inforce)
 except Exception:                         # noqa: BLE001
-    _Creds = _Http = _test_connections = _resolve_exposure_id = _account_from_edm = None
+    _Creds = _Http = _test_connections = _resolve_exposure_id = _account_from_edm = _resolve_inforce = None
 try:
     import anv_store as _anv_store
 except Exception:                         # noqa: BLE001
@@ -2304,24 +2365,209 @@ def _get_archive(share_dir: str, local_dir: str):
 ARCHIVE = _get_archive(_secret("ARCHIVE_DIR"), str(STORE.path.parent / "runs"))
 
 
-@st.cache_resource(show_spinner=False)
-def _auto_restore(_store, _archive):
-    """Once per server start: if the library is empty and the shared folder holds earlier runs, load them back."""
+
+# --------------------------------------------------------------------------
+# Library durability. The shared folder holds a verified copy of EVERY account (database -> shared folder on every
+# save, shared folder -> database on every start / library view / open), so results are never trapped on one server,
+# one database file or one process. Everything here is best-effort and never raises into the page.
+# --------------------------------------------------------------------------
+def _sync_library(force: bool = False, only: str | None = None) -> dict:
+    """Bring the database and the shared folder level, newest copy winning. Throttled to once every 30 s unless forced."""
+    now = time.time()
+    if not force and not only and now - ss.get("_sync_at", 0) < 30:
+        return ss.get("sync_report") or {}
     try:
-        if not _store.list() and _archive.on_share:
-            return _store.restore_from_archive(_archive)
-    except Exception:                                    # noqa: BLE001
-        pass
-    return (0, 0)
+        if not only and not ARCHIVE.legacy_done() and now - ss.get("_legacy_try", 0) > 600:
+            ss["_legacy_try"] = now                                   # older per-run folders: merged once, then marked
+            try:
+                ss["legacy_report"] = STORE.import_legacy(ARCHIVE)
+                ARCHIVE.mark_legacy_done()
+            except Exception as exc:                                  # noqa: BLE001
+                ss["legacy_report"] = {"error": f"{type(exc).__name__}: {exc}"}
+        rep = STORE.sync(ARCHIVE, only=only)
+    except Exception as exc:                                          # noqa: BLE001
+        rep = {"errors": [f"{type(exc).__name__}: {exc}"], "state": {}, "share": ARCHIVE.on_share, "unreadable": []}
+    ss.setdefault("vault_state", {}).update(rep.get("state") or {})
+    if not only:
+        ss["_sync_at"] = now
+        ss["sync_report"] = rep
+    return rep
 
 
-_auto_restore(STORE, ARCHIVE)
+def _storage_banner() -> None:
+    """Loud, plain-English warnings when results are not as safe as they should be."""
+    if not ARCHIVE.on_share:
+        st.warning("The shared folder is not reachable or not writable, so results are being saved on this server only. "
+                   "They are safe for now, but could be lost if the app is redeployed or the server is reset. They copy "
+                   "across automatically as soon as the folder works again.")
+    elif ARCHIVE.share_suspect:
+        st.warning(f"The shared folder `{ARCHIVE.share_root}` did not exist and had to be created, and it does not sit on "
+                   "a mounted drive. If the share is not mounted, saved results are only on this server.")
+    if not STORE.durable:
+        st.warning(f"The library database is in a {STORE.location_kind} that is cleared on restart or redeploy. "
+                   "Results are still copied to the shared folder, but set STORE_DIR to a permanent folder.")
+
+
+def _save_badge() -> str:
+    si = ss.get("save_info")
+    if not si:
+        return ""
+    if not si.get("ok"):
+        return f'<span class="badge bad">Not saved</span>'
+    if si.get("shared"):
+        return f'<span class="badge ok">Saved {si["t"]} &middot; shared folder</span>'
+    return f'<span class="badge warn">Saved {si["t"]} &middot; this server only</span>'
+
+
+# --------------------------------------------------------------------------
+# In-force portfolio registry: one entry per month ("as at" date), so the monthly in-force analysis is picked from a
+# list instead of retyped. Saved in the shared run folder (so everyone sees it) and mirrored next to the library.
+# --------------------------------------------------------------------------
+INFORCE_FILE = "inforce_registry.json"
+
+
+def _inforce_paths(write: bool = False) -> list:
+    if write:
+        try:
+            ARCHIVE.refresh()                                   # the share can come and go
+        except Exception:                                       # noqa: BLE001
+            pass
+    out = []
+    for p in (ARCHIVE.root / INFORCE_FILE, STORE.path.parent / INFORCE_FILE):
+        if p not in out:
+            out.append(p)
+    return out
+
+
+def _inforce_load() -> dict:
+    """Newest copy wins (the share and the local mirror are always written together)."""
+    best = {"months": {}, "updated": ""}
+    for p in _inforce_paths():
+        try:
+            d = json.loads(p.read_text(encoding="utf-8"))
+        except Exception:                                       # noqa: BLE001
+            continue
+        if not isinstance(d, dict) or not isinstance(d.get("months"), dict):
+            continue
+        if str(d.get("updated", "")) >= best["updated"]:
+            best = {"months": d["months"], "updated": str(d.get("updated", ""))}
+    best["months"] = {k: m for k, m in best["months"].items()
+                      if isinstance(m, dict) and str(m.get("id", "")).isdigit() and m.get("as_at") == k}
+    return best
+
+
+def _inforce_save(reg: dict) -> int:
+    """Write the registry everywhere it can go. Returns how many copies were written."""
+    reg["updated"] = datetime.now().isoformat(timespec="seconds")
+    blob = json.dumps({"months": reg["months"], "updated": reg["updated"]}, indent=2)
+    wrote = 0
+    for p in _inforce_paths(write=True):
+        try:
+            p.parent.mkdir(parents=True, exist_ok=True)
+            tmp = p.with_name(p.name + ".tmp")
+            tmp.write_text(blob, encoding="utf-8")
+            os.replace(tmp, p)
+            wrote += 1
+        except Exception:                                       # noqa: BLE001
+            continue
+    return wrote
+
+
+def _inforce_default_meta(default_id: str) -> dict:
+    known = default_id == DEFAULT_INFORCE_ANALYSIS_ID
+    return {"as_at": "", "id": default_id, "app_id": default_id,
+            "analysis_id": DEFAULT_INFORCE_LONG_ID if known else "",
+            "name": DEFAULT_INFORCE_NAME if known else "", "default": True}
+
+
+def _inforce_ids(meta: dict) -> set:
+    return {str(meta.get(k)) for k in ("id", "app_id", "analysis_id") if meta and meta.get(k)}
+
+
+def _fmt_asat(iso: str) -> str:
+    try:
+        return date.fromisoformat(iso).strftime("%d/%m/%Y")
+    except Exception:                                           # noqa: BLE001
+        return iso or ""
+
+
+def _inforce_label(meta: dict) -> str:
+    ident = meta.get("app_id") or meta.get("id") or ""
+    if meta.get("default"):
+        return f"Default  -  {ident}"
+    return f"As at {_fmt_asat(meta.get('as_at', ''))}  -  {ident}"
+
+
+def _inforce_describe(meta: dict) -> str:
+    bits = [f"as at {_fmt_asat(meta['as_at'])}" if meta.get("as_at") else "default"]
+    if meta.get("app_id") or meta.get("id"):
+        bits.append(f"ID {meta.get('app_id') or meta.get('id')}")
+    if meta.get("analysis_id") and meta.get("analysis_id") != (meta.get("app_id") or meta.get("id")):
+        bits.append(f"analysis {meta['analysis_id']}")
+    if meta.get("name"):
+        bits.append(meta["name"])
+    return "  |  ".join(bits)
+
+
+def _inforce_check(host: str, risk_key: str, verify: bool, raw_id: str):
+    """Look the ID up in RMS (as an app ID or a long analysis ID). -> (hit dict | None, error text)."""
+    if _resolve_inforce is None or _Creds is None:
+        return None, "The RMS module did not load, so the ID could not be checked."
+    try:
+        creds = _Creds(host=host, riskdata_key=risk_key, riskmodeler_key=risk_key, verify=verify)
+        return _resolve_inforce(_Http(verify), creds, raw_id), ""
+    except Exception as exc:                                    # noqa: BLE001
+        return None, str(exc)
+
+
+def _inforce_add(reg: dict, host: str, risk_key: str, verify: bool, as_at: date, raw_id: str, skip_check: bool):
+    """Validate and store one month. -> (level, message, saved_key | None)."""
+    raw_id = (raw_id or "").strip()
+    if not raw_id.isdigit():
+        return "error", "Enter the analysis ID as a number - the app ID (e.g. 65418) or the long analysis ID.", None
+    entry = {"as_at": as_at.isoformat(), "id": raw_id, "app_id": raw_id if len(raw_id) < 7 else "",
+             "analysis_id": raw_id if len(raw_id) >= 7 else "", "name": "", "checked": False,
+             "saved": datetime.now().isoformat(timespec="seconds")}
+    note = ""
+    if skip_check:
+        note = "Saved without checking."
+    elif not risk_key:
+        note = "Saved, but not checked: add the Risk Data key in the sidebar to verify IDs against RMS."
+    else:
+        hit, err = _inforce_check(host, risk_key, verify, raw_id)
+        if not hit:
+            return "error", ((err.split(chr(10))[0].rstrip(". ")) or "RMS could not find that analysis") + \
+                ". Nothing was saved. Tick 'Save without checking' to keep it anyway.", None
+        entry.update(analysis_id=str(hit.get("analysisId") or entry["analysis_id"]),
+                     app_id=str(hit.get("appAnalysisId") or entry["app_id"]),
+                     name=str(hit.get("analysisName") or ""), checked=True)
+    clash = [m for k, m in reg["months"].items()
+             if k != entry["as_at"] and _inforce_ids(m) & _inforce_ids(entry)]
+    if _inforce_ids(_inforce_default_meta(_secret("INFORCE_ANALYSIS_ID") or DEFAULT_INFORCE_ANALYSIS_ID)) \
+            & _inforce_ids(entry):
+        clash.append({"as_at": "", "default": True})
+    existed = entry["as_at"] in reg["months"]
+    reg["months"][entry["as_at"]] = entry
+    wrote = _inforce_save(reg)
+    msg = f"{'Updated' if existed else 'Added'}: {_inforce_describe(entry)}. "
+    if note:
+        msg += note + " "
+    if wrote == 0:
+        msg += "Warning: could not write the list to disk, so it will be lost when the app restarts. "
+    level = "success"
+    if clash:
+        level = "warning"
+        msg += ("Note: this is the same analysis as " +
+                ", ".join("the default" if m.get("default") else _fmt_asat(m["as_at"]) for m in clash) +
+                " - if this month has a new in-force portfolio, enter its new ID.")
+    return level, msg, entry["as_at"]
 
 SECTION_STEPS = ["1 · Quote", "2 · Geocode", "3 · RMS run", "4 · Results"]
 S_QUOTE, S_GEO, S_RUN, S_RES = SECTION_STEPS
 WS_KEYS = ["acc_df", "loc_df", "preview_rows", "geo_failed", "geo_coarse", "rms_import_job", "verify_result",
            "verify_override", "pipeline_state", "res_state", "res_error", "preflight_issues", "auto_pull",
-           "launch_error", "allow_ungeocoded", "import_log", "run_stamp", "arch_hash"]
+           "launch_error", "allow_ungeocoded", "import_log", "run_stamp", "arch_hash", "save_info", "persist_token",
+           "open_notice", "_persist_retry_at"]
 
 
 def _qp_id(value: str = "") -> None:
@@ -2398,8 +2644,28 @@ def _derive_status() -> str:
     return "Draft"
 
 
-def _save(include_results: bool = False, status: str | None = None) -> str | None:
-    """Write the current workspace to the library. Never stores API keys."""
+def _note_save(ok: bool, *, shared=None, local=None, error: str = "", results: bool = False) -> None:
+    ss["save_info"] = {"t": datetime.now().strftime("%H:%M:%S"), "ok": ok, "shared": shared, "local": local,
+                       "error": error, "results": results}
+
+
+def _save(include_results: bool | None = None, status: str | None = None) -> str | None:
+    """Write the current workspace to the library AND the shared folder, then read it back to confirm. Never raises
+    into the page and never stores API keys. include_results=None writes the results whenever they are not saved yet."""
+    try:
+        return _save_inner(include_results, status)
+    except Exception as exc:                                         # noqa: BLE001
+        if type(exc).__name__ in ("RerunException", "StopException"):
+            raise
+        _note_save(False, error=f"{type(exc).__name__}: {exc}")
+        try:
+            st.toast("Could not save this account - see the red badge. Your work is still on screen.")
+        except Exception:                                            # noqa: BLE001
+            pass
+        return ss.get("acct_id")
+
+
+def _save_inner(include_results, status) -> str | None:
     draft = ss.get("draft")
     if not draft:
         return None
@@ -2412,12 +2678,16 @@ def _save(include_results: bool = False, status: str | None = None) -> str | Non
     summary = {"uw": acct.get("Underwriter Initials", ""), "locations": sum(
         1 for r in draft.get("locations", []) if str(r.get("STREETNAME", "")).strip()) or None,
         "tiv": _draft_tiv(draft) or None, "premium": acct.get("Premium") or None}
-    done_state = rs if (rs and rs.get("stage") == "done") else None
+    done_state = rs if (rs and _anv_store.results_usable(rs)) else None
     if done_state and _summarize_state:
         try:
             summary.update({k: v for k, v in _summarize_state(done_state).items() if v is not None})
         except Exception:                 # noqa: BLE001
             pass
+    want_results = bool(done_state) and (include_results is True or (include_results is None and not rs.get("_persisted")))
+    eff_status = status or _derive_status()
+    if eff_status == "Complete" and not done_state:
+        eff_status = "Analysed"                                      # never claim Complete without storable results
     files = None
     if "acc_df" in ss and "loc_df" in ss:
         files = {"acc_csv": ss["acc_df"].to_csv(index=False), "loc_csv": ss["loc_df"].to_csv(index=False),
@@ -2429,14 +2699,47 @@ def _save(include_results: bool = False, status: str | None = None) -> str | Non
     if job or ps or stamp:
         run = _anv_store.strip_secrets({"job": job, "pipeline": ps, "verify": ss.get("verify_result"),
                                         "verify_override": ss.get("verify_override", False), "archive": stamp})
-    results = _anv_store.strip_secrets(done_state) if (include_results and done_state) else None
-    ss["acct_id"] = STORE.upsert(
+    results = _anv_store.strip_secrets(done_state) if want_results else None
+    # nothing changed since the last confirmed save -> nothing to write (keeps the shared folder quiet)
+    token = hashlib.md5(_anv_store.pack([draft, files, run, eff_status, summary])).hexdigest()
+    if (not want_results and ss.get("acct_id") and ss.get("persist_token") == (ss["acct_id"], token)
+            and (ss.get("save_info") or {}).get("ok")):
+        return ss["acct_id"]
+    acct_id = STORE.upsert(
         ss.get("acct_id") or "", account_key=key, layer=acct.get("Layer Name", ""),
-        edm_name=(job or {}).get("edm_name", ""), status=status or _derive_status(), summary=summary,
+        edm_name=(job or {}).get("edm_name", ""), status=eff_status, summary=summary,
         inputs=draft, files=files, run=run, results=results)
-    _qp_id(ss["acct_id"])
-    _archive_run(ss["acct_id"], stamp, files, run, results, status or _derive_status(), draft)
-    return ss["acct_id"]
+    ss["acct_id"] = acct_id
+    _qp_id(acct_id)
+    readback_ok = True
+    if want_results:
+        if STORE.check_results(acct_id) == "ok":                     # read the results back - do not assume
+            rs["_persisted"] = True
+        else:
+            readback_ok = False
+    push = STORE.push(ARCHIVE, acct_id)                              # verified copy in the shared folder + this server
+    safe_elsewhere = bool(push["shared"] or push["local"])
+    ss.setdefault("vault_state", {})[acct_id] = "shared" if push["shared"] else ("local" if push["local"] else "none")
+    _archive_run(acct_id, stamp, files, run, results, eff_status, draft)
+    msgs = []
+    if not readback_ok:
+        msgs.append("the results were written but could not be read back from the library")
+    if not safe_elsewhere:
+        msgs.append(push.get("error") or "no second copy could be written")
+    elif push["shared"] is False and push.get("error"):
+        msgs.append(push["error"])                                   # shared folder failed; the server copy is safe
+    ok = readback_ok and safe_elsewhere
+    _note_save(ok, shared=push["shared"], local=push["local"], error="; ".join(msgs),
+               results=bool(want_results and rs.get("_persisted")))
+    if ok:
+        ss["persist_token"] = (acct_id, token)
+    else:
+        ss.pop("persist_token", None)
+        try:
+            st.toast("Could not confirm the save - see the red badge.")
+        except Exception:                                            # noqa: BLE001
+            pass
+    return acct_id
 
 
 def _archive_run(acct_id, stamp, files, run, results, status, draft) -> None:
@@ -2473,7 +2776,12 @@ def _new_quote() -> None:
 
 
 def _open_account(acct_id: str) -> bool:
+    _sync_library(only=acct_id)                          # pull a newer / missing copy from the shared folder first
     rec = STORE.get(acct_id)
+    if rec and (rec.get("_damaged") or (rec.get("status") == "Complete"
+                                        and not _anv_store.results_usable(rec.get("results")))):
+        if STORE.repair(ARCHIVE, acct_id):               # damaged / empty entry -> a verified copy from the shared folder
+            rec = STORE.get(acct_id)
     if not rec:
         return False
     _reset_workspace()
@@ -2499,11 +2807,26 @@ def _open_account(acct_id: str) -> bool:
         ss["verify_result"] = run["verify"]
     ss["verify_override"] = bool(run.get("verify_override"))
     res = rec.get("results")
-    if res and res.get("stage") == "done":
+    notes = []
+    if rec.get("_damaged"):
+        notes.append("Part of this saved account could not be read (" + ", ".join(rec["_damaged"]) + ").")
+    if res and _anv_store.results_usable(res):
         res["from_library"] = rec.get("updated", "")
+        res["_persisted"] = True                          # it came out of the library, so it is already saved
         ss["res_state"] = res
+    else:
+        if res:
+            notes.append("The saved results are incomplete.")
+        elif rec.get("status") == "Complete":
+            notes.append("This account is marked Complete but its saved results are missing.")
+        job = ss.get("rms_import_job") or {}
+        if job.get("exposure_id") and (rec.get("status") in ("Complete", "Analysed") or res):
+            ss["auto_pull"] = True                        # the analysis exists in RMS: rebuild the results from it
+            notes.append("They are rebuilt from RMS automatically (this needs the Risk Data key in the sidebar).")
+    if notes:
+        ss["open_notice"] = " ".join(notes)
     ss["view"] = "workspace"
-    ss["ws_step_req"] = (S_RES if "res_state" in ss else S_RUN if "rms_import_job" in ss
+    ss["ws_step_req"] = (S_RES if ("res_state" in ss or ss.get("auto_pull")) else S_RUN if "rms_import_job" in ss
                          else S_GEO if "acc_df" in ss else S_QUOTE)
     _qp_id(acct_id)
     return True
@@ -2549,6 +2872,8 @@ def _sec(title: str) -> None:
 if "booted" not in ss:
     ss["booted"] = True
     ss["view"] = "library"
+    with st.spinner("Checking the saved-results library..."):
+        _sync_library(force=True)                      # a restart / new server / redeploy never leaves the library empty
     _q = st.query_params.get("id") if hasattr(st, "query_params") else None
     if isinstance(_q, str) and _q.strip():
         if not _open_account(_q.strip()):
@@ -2556,6 +2881,8 @@ if "booted" not in ss:
 if "draft" not in ss:
     ss["draft"] = _blank_draft()
 ss.setdefault("nonce", 0)
+if "inforce_reg" not in ss:
+    ss["inforce_reg"] = _inforce_load()
 
 # --------------------------------------------------------------------------
 # Sidebar: navigation + connection + analysis settings
@@ -2586,10 +2913,44 @@ with st.sidebar:
                                        "EDM creation, import, analysis and results (riskdata / riskmodeler endpoints).")
     grouping_api_key, _s3 = _key_box("Grouping key", "GROUPING_API_KEY",
                                      "Marginal impact (platform/grouping/v1). Its own dedicated key.")
-    inforce_analysis_id = st.text_input(
-        "In-force portfolio analysis ID", value=_secret("INFORCE_ANALYSIS_ID") or DEFAULT_INFORCE_ANALYSIS_ID,
-        help="The portfolio analysis Marginal Impact compares every quote against. Changes about once a month. "
-             "Accepts the app ID (e.g. 65418) or the long analysis ID.")
+    _reg = ss["inforce_reg"]
+    _def_meta = _inforce_default_meta(_secret("INFORCE_ANALYSIS_ID") or DEFAULT_INFORCE_ANALYSIS_ID)
+    _months = sorted(_reg["months"].values(), key=lambda m: m["as_at"], reverse=True)
+    _opts = [m["as_at"] for m in _months] + ["default"]
+    if "inforce_pick_req" in ss:                              # set by 'Check and save' / 'Remove' before the box is drawn
+        ss["inforce_pick"] = ss.pop("inforce_pick_req")
+    if ss.get("inforce_pick") not in _opts:
+        ss["inforce_pick"] = _opts[0]                         # newest month if there is one, else the default
+    _pick = st.selectbox(
+        "In-force portfolio as at", _opts, key="inforce_pick",
+        format_func=lambda k: _inforce_label(_def_meta if k == "default" else _reg["months"][k]),
+        help="The in-force portfolio analysis Marginal Impact compares every quote against. Pick the month's "
+             "portfolio here; add a new month below when it is available. 'Default' is the standing ID.")
+    INFORCE = _def_meta if _pick == "default" else _reg["months"][_pick]
+    inforce_analysis_id = INFORCE["id"]
+    st.caption(_inforce_describe(INFORCE))
+    with st.expander("Add or update a month"):
+        _m = ss.pop("inforce_msg", None)
+        if _m:
+            {"success": st.success, "warning": st.warning, "error": st.error}.get(_m[0], st.info)(_m[1])
+        st.caption("Each month: enter the month-end date and that month's in-force portfolio analysis ID "
+                   "(the app ID such as 65418, or the long analysis ID). Adding a month selects it.")
+        _asat = st.date_input("Portfolio as at", value=date.today().replace(day=1) - timedelta(days=1),
+                              format="DD/MM/YYYY", key="inf_new_date")
+        _newid = st.text_input("Analysis ID", key="inf_new_id", placeholder="e.g. 65418")
+        _skip = st.checkbox("Save without checking in RMS", key="inf_new_skip")
+        if st.button("Check and save", key="inf_new_btn", width="stretch"):
+            _lvl, _txt, _key = _inforce_add(_reg, host, rms_import_api_key, True, _asat, _newid, _skip)
+            ss["inforce_msg"] = (_lvl, _txt)
+            if _key:
+                ss["inforce_pick_req"] = _key
+            st.rerun()
+        if _pick != "default" and st.button("Remove the selected month", key="inf_del", width="stretch"):
+            _reg["months"].pop(_pick, None)
+            _inforce_save(_reg)
+            ss["inforce_msg"] = ("info", f"Removed {_fmt_asat(_pick)}.")
+            ss["inforce_pick_req"] = "default"
+            st.rerun()
     grouping_rg_id = _secret("GROUPING_RESOURCE_GROUP_ID")
     verify_ssl = True
     rms_import_verify_ssl = verify_ssl
@@ -2622,7 +2983,10 @@ with st.sidebar:
                 'ARCHIVE_DIR = "/mnt/from-posit/content/anv-eq-rms-modeller"   # default, only set to override',
                 language="toml")
     st.caption(f"Library: {len(STORE.list())} account(s)")
-    st.caption("Run folders: shared folder" if ARCHIVE.on_share else "Run folders: LOCAL fallback (shared folder not available)")
+    if ARCHIVE.on_share:
+        st.caption(":green[●] Every save is also copied to the shared folder")
+    else:
+        st.caption(":red[●] Shared folder not reachable or not writable - saving on this server only")
 
 
 # --------------------------------------------------------------------------
@@ -2640,11 +3004,14 @@ st.markdown(f'<div class="topbar"><div class="wm">ANV<i>.</i></div><div class="t
 # LIBRARY VIEW
 # ==========================================================================
 def _library_view():
+    _sync_library()                                      # at most every 30 s; also heals a wiped / different server
+    _storage_banner()
     rows = STORE.list()
     st.markdown('<div class="pg-title">Accounts</div><div class="pg-sub">Every quote you run is saved here - '
                 'open one to see its results again without re-running anything.</div>', unsafe_allow_html=True)
 
-    done = sum(1 for r in rows if r["status"] == "Complete")
+    done = sum(1 for r in rows if r["status"] == "Complete" and r.get("has_results"))
+    broken = [r for r in rows if r["status"] == "Complete" and not r.get("has_results")]
     prog = sum(1 for r in rows if r["status"] in ("In RMS", "Analysed", "Geocoded"))
     drafts = sum(1 for r in rows if r["status"] == "Draft")
     if _kpis and rows:
@@ -2653,6 +3020,10 @@ def _library_view():
                            ("In progress", f"{prog:,}", "geocoded / in RMS / analysed", GOLD),
                            ("Drafts", f"{drafts:,}", "not yet run", "#8A94A6")]), unsafe_allow_html=True)
 
+    if broken:
+        st.warning(f"{len(broken)} account(s) are marked Complete but their saved results are missing "
+                   f"({', '.join((r['account_key'] or '?') for r in broken[:5])}{'...' if len(broken) > 5 else ''}). "
+                   "Open one to rebuild its results from RMS, or run 'Check and repair' under Storage health.")
     c1, c2, c3 = st.columns([3, 3, 1.6])
     q = c1.text_input("Search", placeholder="Account key, layer, EDM...", label_visibility="collapsed", key="lib_q")
     flt = c2.segmented_control("Show", ["All", "Complete", "In progress", "Draft"], default="All",
@@ -2691,7 +3062,10 @@ def _library_view():
                 "Locations": s.get("locations") or None, "TIV": _cmp(s.get("tiv"), cur),
                 "Quote AAL": _cmp(s.get("aal"), cur),
                 f"Marginal impact (1 in {s.get('rp', 250)})": f"{mi * 100:+.3f}%" if isinstance(mi, (int, float)) else "-",
-                "Status": r["status"], "Updated": _uk(r["updated"]),
+                "Status": r["status"] if (r["status"] != "Complete" or r.get("has_results")) else "Results missing",
+                "Saved": {"shared": "Shared folder", "local": "This server only", "none": "Not backed up"}.get(
+                    (ss.get("vault_state") or {}).get(r["id"]), "-"),
+                "Updated": _uk(r["updated"]),
             })
         df = pd.DataFrame(recs)
         ev = st.dataframe(df, hide_index=True, width="stretch", on_select="rerun", selection_mode="single-row",
@@ -2713,10 +3087,61 @@ def _library_view():
                 st.write(f"Delete **{rec['account_key'] or 'this account'}** from the library? "
                          "Nothing is removed from RMS.")
                 if st.button("Yes, delete", key="lib_del"):
-                    STORE.delete(rec["id"])
+                    STORE.delete(rec["id"], ARCHIVE)
+                    ss.get("vault_state", {}).pop(rec["id"], None)
                     st.rerun()
         else:
             st.caption("Select a row to open, duplicate or delete it.")
+
+    with st.expander("Storage health"):
+        rep_ = ss.get("sync_report") or {}
+        vc = {n: len(v.metas()) for n, v in ARCHIVE.vaults()}
+        st.markdown(
+            "| | |\n|---|---|\n"
+            f"| Library database | `{STORE.path}` ({STORE.location_kind}" + ("" if STORE.durable else ", **temporary**") + ") |\n"
+            f"| Shared folder | `{ARCHIVE.share_root}` - " + ("**connected**" if ARCHIVE.on_share else "**NOT reachable**") + " |\n"
+            f"| Accounts | {len(rows)} in the database, {vc.get('shared', 'n/a')} in the shared folder, "
+            f"{vc.get('local', 0)} on this server |\n"
+            f"| Last check | {_uk(rep_.get('at', '')) or 'not yet'} - {rep_.get('pulled', 0)} restored, "
+            f"{rep_.get('pushed', 0)} copied out, {rep_.get('removed', 0)} removed |")
+        for e_ in (rep_.get("errors") or [])[:4]:
+            st.error(e_)
+        if rep_.get("unreadable"):
+            st.error(f"{len(rep_['unreadable'])} saved copy(ies) could not be read and were skipped.")
+        lg = ss.get("legacy_report") or {}
+        if lg.get("error"):
+            st.warning("Older run folders could not be merged: " + lg["error"])
+        elif lg.get("scanned"):
+            st.caption(f"Older run folders merged: {lg.get('added', 0)} added, {lg.get('updated', 0)} updated.")
+        h1, h2, h3 = st.columns(3)
+        if h1.button("Sync now", key="st_sync", width="stretch"):
+            ARCHIVE.refresh()
+            _sync_library(force=True)
+            st.rerun()
+        if h2.button("Check and repair", key="st_deep", width="stretch",
+                     help="Reads every saved account back, repairs damaged ones from the shared folder, and re-copies "
+                          "anything missing there."):
+            with st.spinner("Checking every account..."):
+                ARCHIVE.refresh()
+                ss["deep_report"] = STORE.deep_check(ARCHIVE)
+            _sync_library(force=True)
+        if h3.button("Re-check shared folder", key="st_share", width="stretch"):
+            ARCHIVE.refresh()
+            st.rerun()
+        dr = ss.get("deep_report")
+        if dr:
+            if not (dr["damaged"] or dr.get("vault_bad") or dr.get("vault_fixed")):
+                st.success(f"Checked {dr['checked']} account(s): all saved results read back correctly.")
+            else:
+                if dr["repaired"]:
+                    st.success("Repaired from the shared folder: " + ", ".join(dr["repaired"]))
+                if dr.get("vault_fixed"):
+                    st.success("Re-wrote damaged shared-folder copies: " + ", ".join(dr["vault_fixed"]))
+                if dr["unrepaired"]:
+                    st.error("Could not repair (no good copy anywhere): " + ", ".join(dr["unrepaired"]) +
+                             ". Open each one and use Pull results to rebuild it from RMS.")
+                if dr.get("vault_bad"):
+                    st.error("Damaged and could not be re-written: " + ", ".join(dr["vault_bad"]))
 
     with st.expander("Open a run that is not in the library yet"):
         st.caption("For analyses run before the library existed: load them from RMS by EDM name. "
@@ -3384,6 +3809,26 @@ def _step_run():
                 st.rerun()
 
 
+def _inforce_notice(state) -> None:
+    """Which in-force portfolio Marginal Impact uses - and a warning if saved results used a different one."""
+    st.markdown(f"**In-force portfolio:** {_h.escape(_inforce_describe(INFORCE))}", unsafe_allow_html=False)
+    if not (state and state.get("stage") == "done"):
+        return
+    used = dict(state.get("inforce") or {})
+    ids = _inforce_ids(used)
+    for v in ((state.get("group") or {}).get("portfolio_id"),
+              ((state.get("bundle") or {}).get("mi") or {}).get("portfolio_id")):
+        if v:
+            ids.add(str(v))
+    if not ids:
+        return                                                  # Marginal Impact was not run for this account
+    if ids & _inforce_ids(INFORCE):
+        return
+    what = _inforce_describe(used) if used else "analysis " + ", ".join(sorted(ids))
+    st.warning(f"These saved results compare against a different in-force portfolio ({what}). To re-run Marginal "
+               "Impact against the one selected in the sidebar, open **Refresh from RMS** below.")
+
+
 # ---- Step 4: results ----------------------------------------------------------------
 def _step_results():
     if render_results is None:
@@ -3392,7 +3837,9 @@ def _step_results():
     job = ss.get("rms_import_job")
     state = ss.get("res_state")
     pstate = ss.get("pipeline_state") or {}
-    ready = bool(job and (job.get("recovered") or pstate.get("stage") == "done" or state))
+    have_results = bool(state and state.get("stage") == "done")
+    # saved results are shown even if the run record is missing - they must never be hidden by an unrelated gap
+    ready = have_results or bool(job and (job.get("recovered") or pstate.get("stage") == "done"))
     if not ready:
         st.info("Results appear here once the analysis in step 3 has finished.")
         if job and st.button("Go to the RMS run", key="res_to_run"):
@@ -3400,15 +3847,29 @@ def _step_results():
         return
 
     def _done(new_state):
-        _save(include_results=True)
+        if new_state.get("group") and not new_state.get("inforce"):
+            new_state["inforce"] = {k: v for k, v in INFORCE.items() if k in ("as_at", "id", "app_id", "analysis_id", "name")}
+            new_state["inforce"]["default"] = bool(INFORCE.get("default"))
+        _save(include_results=True)                    # never raises: a failed save cannot wipe the results screen
 
     kw = dict(host=host, li_api_key=api_key, risk_api_key=rms_import_api_key, grouping_api_key=grouping_api_key,
               grouping_rg_id=grouping_rg_id, inforce_id=inforce_analysis_id, verify=verify_ssl,
               account_key=ss["draft"]["account"]["Account Key"], loc_df=ss.get("loc_df"), job=job or {"edm_name": ""},
               pstate=pstate, on_done=_done)
-    if state and state.get("stage") == "done":
+    _inforce_notice(state)
+    if have_results:
         note = f"Saved {_uk(state['from_library'])}" if state.get("from_library") else ""
-        render_results(state, (job or {}).get("edm_name", ""), note)
+        try:
+            render_results(state, (job or {}).get("edm_name", ""), note)
+        except Exception as exc:                       # noqa: BLE001
+            if type(exc).__name__ in ("RerunException", "StopException"):
+                raise
+            st.error("These saved results could not be displayed. The stored copy has NOT been changed.")
+            st.code(f"{type(exc).__name__}: {exc}", language=None)
+            if job and st.button("Rebuild the results from RMS", key="res_rebuild", type="primary"):
+                ss.pop("res_state", None)
+                ss["auto_pull"] = True
+                st.rerun()
         with st.expander("Refresh from RMS"):
             render_pull_panel(auto=False, **kw)
     else:
@@ -3417,15 +3878,31 @@ def _step_results():
 
 # ---- workspace shell ------------------------------------------------------------------
 def _workspace_view():
+    _rs = ss.get("res_state")                            # safety net: results on screen are always written to the library
+    if _rs and _rs.get("stage") == "done" and not _rs.get("_persisted") and time.time() >= ss.get("_persist_retry_at", 0):
+        _save(include_results=True)
+        if not _rs.get("_persisted"):
+            ss["_persist_retry_at"] = time.time() + 20
+    _storage_banner()
     a = ss["draft"]["account"]
     status = _derive_status()
     title = _h.escape(a["Account Key"] or "New quote")
-    st.markdown(f'<div class="pg-title">{title}{_badge(status)}</div>'
+    st.markdown(f'<div class="pg-title">{title}{_badge(status)}{_save_badge()}</div>'
                 f'<div class="pg-sub">{_h.escape(a["Layer Name"]) + " &middot; " if a["Layer Name"] else ""}'
                 f'{_h.escape(a["Line of Business"]) + " &middot; " if a["Line of Business"] else ""}'
                 f'{datetime.fromisoformat(a["Inception Date"]):%d/%m/%Y} to {datetime.fromisoformat(a["Expiry Date"]):%d/%m/%Y}'
                 f'</div>', unsafe_allow_html=True)
 
+    _si = ss.get("save_info")
+    if _si and not _si.get("ok"):
+        st.error("This account could not be saved, so it may not be there next time: " + (_si.get("error") or "unknown error")
+                 + ". Your work is still on screen and will be retried; if this stays, use Save draft or tell me the message.")
+    _on = ss.get("open_notice")
+    if _on:
+        if _rs and _rs.get("stage") == "done":
+            ss.pop("open_notice", None)
+        else:
+            st.warning(_on)
     if "ws_step_req" in ss:
         ss["ws_step"] = ss.pop("ws_step_req")
     ss.setdefault("ws_step", S_QUOTE)
